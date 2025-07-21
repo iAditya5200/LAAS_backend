@@ -3,11 +3,13 @@ package com.victor.laas.dao;
 import java.sql.SQLException;
 import java.time.LocalTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
@@ -17,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.victor.laas.dao.LaasDAO;
 import com.victor.laas.entity.Admin;
 import com.victor.laas.entity.Student;
-import com.victor.laas.entity.User;
+import com.victor.laas.entity.Users;
 
 @Component
 public class LaasDAO {
@@ -47,23 +49,23 @@ public class LaasDAO {
 	
 
 
-    public String registerUser(User user)
+    public String registerUser(Users users)
     { ObjectMapper objectMapper = new ObjectMapper();
        Map<String, Object> response = new HashMap<>();
     	
     	try {
 			String query = "INSERT INTO laasdb.user (email , password,role) VALUES (?,?,?);" ;
-			Object[] params = {user.getEmail() ,user.getPassword() ,user.getRole()}; 
+			Object[] params = {users.getEmail() ,users.getPassword() ,users.getRole()}; 
 			
 			int count = jdbcTemplate.update(query, params);
 			
 			if(count > 0)
 			{
-				 response.put("empid", user.getEmail());
+				 response.put("empid", users.getEmail());
 		 	        response.put("message", "status: created");  
 			}
 			else {
-				 response.put("empid", user.getEmail());
+				 response.put("empid", users.getEmail());
 		 	        response.put("message", "status: not created");
 			}
 			 
@@ -146,5 +148,39 @@ public class LaasDAO {
 			e.printStackTrace();
 		}
         return "status";
+    }
+    
+    public Users checkUser(String username) {
+        try {
+            String query = "SELECT * FROM laasdb.user WHERE email = ?;";
+            Object[] params = {username};
+
+            List<Users> usersList = jdbcTemplate.query(
+                query,
+                params,
+                new BeanPropertyRowMapper<>(Users.class)
+            );
+
+            return usersList.isEmpty() ? null : usersList.get(0);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+    
+    public String getStudentDetails(String username) {
+    	String command = "SELECT * FROM laasdb.student WHERE email = ? ";
+    	Object[] param = { username };
+
+    	try {
+    		ObjectMapper map = new ObjectMapper();
+    		List<Map<String, Object>> response = jdbcTemplate.queryForList(command, param);
+    		return map.writeValueAsString(response);
+
+    	} catch (Exception e) {
+    		throw new RuntimeException("Failed to retrieve student data for email " + username , e);
+    	}
+
     }
 }

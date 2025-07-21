@@ -1,6 +1,6 @@
 package com.victor.laas.entity;
 
-public class User {
+public class Users {
 
 	private int id ;
 	private String role ;
